@@ -9,5 +9,10 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs'
 export class CdkFirstTsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
+
+    // Dynamodb table definition
+    const table = new Table(this, 'Request', {
+      partitionKey: { name: 'username', type: AttributeType.STRING }
+    })
   }
 }
