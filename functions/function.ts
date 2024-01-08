@@ -1,10 +1,26 @@
 import { Handler } from 'aws-lambda'
+import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { DynamoDB } from 'aws-sdk'
+
+interface SaveRequestBody {
+  username: string
+  githubRepo: string
+}
+
+interface DynamoDBItem {
+  username: string
+  githubRepo: string
+  date: number
+}
 
 const dynamo = new DynamoDB.DocumentClient()
 const TABLE_NAME: string = process.env.REQUEST_TABLE_NAME!
 
-export const handler: Handler = async (event, context) => {
+export const handler: Handler<
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2
+> = async (event, context) => {
+  console.log('Received event:', JSON.stringify(event, null, 2))
   const method = event.requestContext.http.method
 
   if (method === 'GET') {
@@ -19,10 +35,11 @@ export const handler: Handler = async (event, context) => {
   }
 }
 
-async function save(event: any) {
-  const body = JSON.parse(event.body)
-  const username = body.username
-  const githubRepo = body.githubRepo
+async function save(
+  event: APIGatewayProxyEventV2
+): Promise<APIGatewayProxyResultV2> {
+  const body: SaveRequestBody = JSON.parse(event.body ?? '{}')
+  const { username, githubRepo } = body
 
   if (!username || !githubRepo) {
     return {
@@ -31,47 +48,70 @@ async function save(event: any) {
     }
   }
 
-  const item = {
+  const item: DynamoDBItem = {
     username: username,
     githubRepo: githubRepo,
     date: Date.now()
   }
 
-  console.log(item)
-  const savedItem = await saveItem(item)
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify(savedItem)
-  }
-}
-
-async function getRequest(event: any) {
-  const username = event.queryStringParameters.username
-
-  const item = await getItem(username)
-
-  if (item !== undefined && item.date) {
-    const d = new Date(item.date)
-
-    const message = `Was requested on ${d.getDate()}/${
-      d.getMonth() + 1
-    }/${d.getFullYear()}`
-
+  try {
+    console.log(item)
+    const savedItem = await saveItem(item)
     return {
       statusCode: 200,
-      body: JSON.stringify(message)
+      body: JSON.stringify(savedItem)
     }
-  } else {
-    const message = 'Was not submitted'
+  } catch (error) {
+    console.error(error)
     return {
-      statusCode: 200,
-      body: JSON.stringify(message)
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal Server Error' })
     }
   }
 }
 
-async function getItem(username: string) {
+async function getRequest(
+  event: APIGatewayProxyEventV2
+): Promise<APIGatewayProxyResultV2> {
+  const username = event.queryStringParameters?.username
+
+  if (!username) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: 'Username is required' })
+    }
+  }
+
+  try {
+    const item = await getItem(username)
+
+    if (item !== undefined && item.date) {
+      const d = new Date(item.date)
+
+      const message = `Was requested on ${d.getDate()}/${
+        d.getMonth() + 1
+      }/${d.getFullYear()}`
+      return {
+        statusCode: 200,
+        body: JSON.stringify(message)
+      }
+    } else {
+      const message = 'Was not submitted'
+      return {
+        statusCode: 200,
+        body: JSON.stringify(message)
+      }
+    }
+  } catch (error) {
+    console.error(error)
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal Server Error' })
+    }
+  }
+}
+
+async function getItem(username: string): Promise<DynamoDBItem | undefined> {
   const params: DynamoDB.DocumentClient.GetItemInput = {
     Key: {
       username: username
@@ -84,11 +124,11 @@ async function getItem(username: string) {
     .promise()
     .then((result) => {
       console.log(result)
-      return result.Item
+      return result.Item as DynamoDBItem
     })
 }
 
-async function saveItem(item: any) {
+async function saveItem(item: DynamoDBItem): Promise<DynamoDBItem> {
   const params: DynamoDB.DocumentClient.PutItemInput = {
     TableName: TABLE_NAME,
     Item: item
