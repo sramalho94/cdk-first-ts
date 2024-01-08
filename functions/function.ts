@@ -4,7 +4,7 @@ import { DynamoDB } from 'aws-sdk'
 const dynamo = new DynamoDB.DocumentClient()
 const TABLE_NAME: string = process.env.REQUEST_TABLE_NAME!
 
-export const hander: Handler = async (event, context) => {
+export const handler: Handler = async (event, context) => {
   const method = event.requestContext.http.method
 
   if (method === 'GET') {
@@ -20,10 +20,20 @@ export const hander: Handler = async (event, context) => {
 }
 
 async function save(event: any) {
-  const name = event.queryStringParameters.username
+  const body = JSON.parse(event.body)
+  const username = body.username
+  const githubRepo = body.githubRepo
+
+  if (!username || !githubRepo) {
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ message: 'Missing required parameters' })
+    }
+  }
 
   const item = {
-    name: name,
+    username: username,
+    githubRepo: githubRepo,
     date: Date.now()
   }
 
@@ -37,9 +47,9 @@ async function save(event: any) {
 }
 
 async function getRequest(event: any) {
-  const name = event.queryStringParameters.name
+  const username = event.queryStringParameters.username
 
-  const item = await getItem(name)
+  const item = await getItem(username)
 
   if (item !== undefined && item.date) {
     const d = new Date(item.date)
@@ -61,10 +71,10 @@ async function getRequest(event: any) {
   }
 }
 
-async function getItem(name: string) {
+async function getItem(username: string) {
   const params: DynamoDB.DocumentClient.GetItemInput = {
     Key: {
-      username: name
+      username: username
     },
     TableName: TABLE_NAME
   }
