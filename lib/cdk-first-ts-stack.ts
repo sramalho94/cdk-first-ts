@@ -26,7 +26,7 @@ export class CdkFirstTsStack extends cdk.Stack {
       }
     })
 
-    // permissions to lambda to dynamo table
+    // permissions for lambda to write to dynamo table
     table.grantReadWriteData(dynamoLambda)
 
     const myFunctionUrl = dynamoLambda.addFunctionUrl({
@@ -36,6 +36,7 @@ export class CdkFirstTsStack extends cdk.Stack {
       }
     })
 
+    // define function url
     new CfnOutput(this, 'FunctionUrl', {
       value: myFunctionUrl.url
     })
