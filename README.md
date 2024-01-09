@@ -4,10 +4,10 @@ This is simple project using CDK, TypeScript, Lambda, and DynamoDB
 
 ## Project Structure
 
-The `cdk.json` file tells the CDK Toolkit how to execute the app.
-The `lib` dir contains the stack and resource definitions
-The `functions` dir contains the methods used in the Lambda functions
-The `bin` dir contains the entry point for the CDK app
+- The `cdk.json` file tells the CDK Toolkit how to execute the app.
+- The `lib` dir contains the stack and resource definitions
+- The `functions` dir contains the methods used in the Lambda functions
+- The `bin` dir contains the entry point for the CDK app
 
 ## Useful commands
 
