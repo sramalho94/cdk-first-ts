@@ -17,14 +17,17 @@ interface DynamoDBItem {
   date: number
 }
 
+// Configure DynamoDB
 const dynamo = new DynamoDB.DocumentClient()
 const TABLE_NAME: string = process.env.REQUEST_TABLE_NAME!
 
+// Configure SES
 const ses = new AWS.SES({ region: 'us-east-2' })
 const transporter = nodemailer.createTransport({
   SES: { ses, aws: AWS }
 })
 
+// Handler function to check req method
 export const handler: Handler<
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2
@@ -50,6 +53,7 @@ async function save(
   const body: SaveRequestBody = JSON.parse(event.body ?? '{}')
   const { username, githubRepo } = body
 
+  // check for necessary values
   if (!username || !githubRepo) {
     return {
       statusCode: 400,
@@ -64,7 +68,6 @@ async function save(
   }
 
   try {
-    console.log(item)
     const savedItem = await saveItem(item)
     return {
       statusCode: 200,
