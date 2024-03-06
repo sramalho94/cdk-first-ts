@@ -4,11 +4,13 @@ import { DynamoDB } from 'aws-sdk'
 import * as AWS from 'aws-sdk'
 import * as nodemailer from 'nodemailer'
 
+// Interface for ReqBody data
 interface SaveRequestBody {
   username: string
   githubRepo: string
 }
 
+// Interface for DynamoDB entry
 interface DynamoDBItem {
   username: string
   githubRepo: string
@@ -155,8 +157,8 @@ async function saveItem(item: DynamoDBItem): Promise<DynamoDBItem> {
 
 async function sendNotificationEmail(item: DynamoDBItem): Promise<void> {
   const emailParams = {
-    from: 'stephanramalho@gmail.com', // Verify this email in SES
-    to: 'sramalho@fordham.edu', // Verify recipient email or request production access
+    from: 'stephanramalho@gmail.com',
+    to: 'sramalho@fordham.edu',
     subject: 'New Entry Notification',
     html: `<p>New entry added: ${item.username} - ${item.githubRepo}</p>`
   }
