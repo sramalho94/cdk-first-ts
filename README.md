@@ -17,3 +17,13 @@ This is simple project using CDK, TypeScript, Lambda, and DynamoDB
 - `npx cdk deploy` deploy this stack to your default AWS account/region
 - `npx cdk diff` compare deployed stack with current state
 - `npx cdk synth` emits the synthesized CloudFormation template
+
+## Lambda Functions Overview
+
+This CDK TypeScript project includes Lambda functions designed to interact with DynamoDB and send notification emails via AWS SES upon certain triggers. Located in the `functions` directory, these functions are central to the application's operations:
+
+- **Request Handler**: The main Lambda function (`handler`) processes incoming API Gateway events. It supports two primary operations based on the HTTP method:
+  - **GET**: Fetches a user's entry from the DynamoDB table using their username.
+  - **POST**: Saves a new entry to DynamoDB with details provided in the request body. Upon successful save, it sends a notification email using SES to inform about the new entry.
+
+This setup demonstrates a serverless architecture utilizing AWS services for database management and email notifications, making the application scalable and efficient.
