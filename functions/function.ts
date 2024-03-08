@@ -134,10 +134,30 @@ async function saveItem(item: DynamoDBItem): Promise<DynamoDBItem> {
     Item: item
   }
 
+  await dynamo.put(params).promise()
+
+  await sendNotificationEmail(item)
+
   return dynamo
     .put(params)
     .promise()
     .then(() => {
       return item
     })
+}
+
+async function sendNotificationEmail(item: DynamoDBItem): Promise<void> {
+  const emailParams = {
+    from: 'stephanramalho@gmail.com', // Verify this email in SES
+    to: 'sramalho@fordham.edu', // Verify recipient email or request production access
+    subject: 'New Entry Notification',
+    html: `<p>New entry added: ${item.username} - ${item.githubRepo}</p>`
+  }
+
+  try {
+    await transporter.sendMail(emailParams)
+    console.log('Email sent successfully')
+  } catch (error) {
+    console.error('Failed to send email:', error)
+  }
 }
