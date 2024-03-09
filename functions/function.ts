@@ -1,6 +1,8 @@
 import { Handler } from 'aws-lambda'
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { DynamoDB } from 'aws-sdk'
+import * as AWS from 'aws-sdk'
+import * as nodemailer from 'nodemailer'
 
 interface SaveRequestBody {
   username: string
@@ -15,6 +17,11 @@ interface DynamoDBItem {
 
 const dynamo = new DynamoDB.DocumentClient()
 const TABLE_NAME: string = process.env.REQUEST_TABLE_NAME!
+
+const ses = new AWS.SES({ region: 'us-east-2' })
+const transporter = nodemailer.createTransport({
+  SES: { ses, aws: AWS }
+})
 
 export const handler: Handler<
   APIGatewayProxyEventV2,
