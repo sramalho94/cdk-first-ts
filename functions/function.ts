@@ -1,6 +1,8 @@
 import { Handler } from 'aws-lambda'
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda'
 import { DynamoDB } from 'aws-sdk'
+import * as AWS from 'aws-sdk'
+import * as nodemailer from 'nodemailer'
 
 interface SaveRequestBody {
   username: string
@@ -15,6 +17,11 @@ interface DynamoDBItem {
 
 const dynamo = new DynamoDB.DocumentClient()
 const TABLE_NAME: string = process.env.REQUEST_TABLE_NAME!
+
+const ses = new AWS.SES({ region: 'us-east-2' })
+const transporter = nodemailer.createTransport({
+  SES: { ses, aws: AWS }
+})
 
 export const handler: Handler<
   APIGatewayProxyEventV2,
@@ -134,10 +141,30 @@ async function saveItem(item: DynamoDBItem): Promise<DynamoDBItem> {
     Item: item
   }
 
+  await dynamo.put(params).promise()
+
+  await sendNotificationEmail(item)
+
   return dynamo
     .put(params)
     .promise()
     .then(() => {
       return item
     })
+}
+
+async function sendNotificationEmail(item: DynamoDBItem): Promise<void> {
+  const emailParams = {
+    from: 'stephanramalho@gmail.com', // Verify this email in SES
+    to: 'sramalho@fordham.edu', // Verify recipient email or request production access
+    subject: 'New Entry Notification',
+    html: `<p>New entry added: ${item.username} - ${item.githubRepo}</p>`
+  }
+
+  try {
+    await transporter.sendMail(emailParams)
+    console.log('Email sent successfully')
+  } catch (error) {
+    console.error('Failed to send email:', error)
+  }
 }
